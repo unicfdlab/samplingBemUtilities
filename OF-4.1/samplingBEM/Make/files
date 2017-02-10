@@ -1,0 +1,7 @@
+surfWriters = sampledSurface/writers
+
+$(surfWriters)/gmsh/gmshSurfaceWriter.C
+
+soundPressureSampler/soundPressureSampler.C
+
+LIB = $(FOAM_USER_LIBBIN)/libsamplingbem

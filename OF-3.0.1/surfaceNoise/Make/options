@@ -1,0 +1,12 @@
+fftw_root=$(FOAM_USER_LIBBIN)/fftw-3.3.3
+
+EXE_INC = \
+    -I$(LIB_SRC)/randomProcesses/lnInclude \
+    -I$(LIB_SRC)/sampling/lnInclude \
+    -I$(fftw_root)/include
+
+EXE_LIBS = \
+    -lrandomProcesses \
+    -lsampling \
+    -L$(fftw_root)/lib \
+    -lfftw3
