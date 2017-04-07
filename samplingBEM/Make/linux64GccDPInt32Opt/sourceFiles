@@ -1,4 +1,0 @@
-SOURCE = \
-$(surfWriters)/gmsh/gmshSurfaceWriter.C \
-soundPressureSampler/soundPressureSampler.C \
-soundPressureSampler/soundPressureSamplerFunctionObject/soundPressureSamplerFunctionObject.C 

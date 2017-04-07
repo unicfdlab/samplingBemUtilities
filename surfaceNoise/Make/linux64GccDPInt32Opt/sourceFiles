@@ -1,3 +1,0 @@
-SOURCE = \
-FoamFourierAnalysis/FoamFftwDriver.C \
-surfaceNoise.C 

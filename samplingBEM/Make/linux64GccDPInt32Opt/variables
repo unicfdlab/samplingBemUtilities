@@ -1,2 +1,0 @@
-surfWriters = sampledSurface/writers
-LIB = $(FOAM_USER_LIBBIN)/libsamplingbem
