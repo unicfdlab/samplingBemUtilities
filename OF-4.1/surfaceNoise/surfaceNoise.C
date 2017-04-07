@@ -36,11 +36,12 @@ Description
 
     \verbatim
 
-    outputFormat gmsh;
+    outputFormat    gmsh; //optionally
 
-    surfaceName  surfaceName;
+    inputFileName   "fileName.txt";
 
-    maxFrequency 1000;
+    maxFrequency    1000;
+
     \endverbatim
 
 
@@ -52,16 +53,14 @@ SeeAlso
 
 \*---------------------------------------------------------------------------*/
 
-
-#include "FoamFourierAnalysis/FoamFftwDriver.H"
 #include "argList.H"
 #include "timeSelector.H"
 #include "Time.H"
-#include "OFstream.H"
-//#include "writeFile.H"
-//#include "functionObjectFile.H"
-#include "complex.H"
-#include "IFstream.H"
+
+
+#include "FoamFourierAnalysis/FoamFftwDriver.H"
+#include "FileInterface/FileInterface.H"
+#include "Interpolator/Interpolator.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -69,93 +68,7 @@ using namespace Foam;
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
-Foam::autoPtr<Foam::List<Foam::List<scalar > > > read (const fileName& pFileName)
-{
-    fileName fullFileName = "pressureData/" + pFileName;
 
-    autoPtr<IFstream> inFilePtr;
-
-    if (inFilePtr.empty())
-    {
-	//Info << "File " << fullFileName << " is not exists" << nl;
-    // Open new file at start up
-        inFilePtr.reset
-        (
-            new IFstream
-            (
-                fullFileName
-            )
-        );
-    }
-
-    List<List<scalar> > data;
-
-    label probeI = 0;
-
-    scalar num = 0;
-
-    string line;
-
-    if (inFilePtr.valid())
-    {
-        //Info << inFilePtr().name() << endl;
-
-        while(inFilePtr().getLine(line))
-        {
-            probeI ++;
-
-            data.resize(probeI);
-
-            //Info << "resize ok" << endl;
-
-            label pointI = 0;
-
-            IStringStream lineStream(line);
-
-            while(lineStream >> num)
-            {  
-                pointI++;
-
-                data[probeI-1].resize(pointI);
-
-                data[probeI-1][pointI-1] = num;
-            }
-
-            //inFilePtr() >> num ;
-            //Info << num << nl;
-
-            //Info << "///////////////////////////////" << nl;
-            //istr++;
-        }
-
-        //check if last string has equal size with previous strings
-        label refSize = data[0].size();
-        label lastStrSize = data[probeI-1].size();
-
-        //Info << "ref size = " << refSize << ", size of last string = " << lastStrSize << endl;
-
-        if (lastStrSize < refSize) // in case of short lasr string cut it because of lost part of data
-        {
-            Info << "Cut tail of damaged data"  << endl;
-            data.resize(probeI-1);
-        }
-
-        Info << "OK" << nl;
-    }
-    else
-    {
-        Info << " No valid file" << endl;
-    }
-
-    return autoPtr<List<List<scalar> > >
-    (
-        new List<List<scalar> >
-        (
-            data
-        )
-    );
-
-}
 
 // just return Re and Im parts of complex pressure amplitude; frequency is out of function
 Foam::autoPtr<Foam::List<Foam::complex > > fft(const List<scalar> &p, scalar lastTime)
@@ -194,86 +107,6 @@ Foam::autoPtr<Foam::List<Foam::complex > > fft(const List<scalar> &p, scalar las
     );
 }
 
-void writeComplexNumber(const complex& number, autoPtr<OFstream>& os)
-{
-    os()    << number.Re();
-
-    label sgn = sign(number.Im());
-
-    if (sgn == 1)
-    {
-        os() << "+";
-    }
-    else
-    {
-        os() << "-";
-    }
-    
-    os() << fabs(number.Im());
-    os() << "j";
-}
-
-void writeToGmsh (const fileName& outputFile, const List<complex >& data)
-{
-
-    if (Pstream::master() || !Pstream::parRun())
-    {
-        autoPtr<OFstream> filePtr;
-
-        if (filePtr.empty())
-        {
-        // Open new file at start up
-            filePtr.reset
-            (
-                new OFstream
-                (
-                    outputFile
-                )
-            );
-        }
-
-
-        filePtr()   << "$NodeData" << nl;
-
-        //string tags
-        filePtr()   << "1" << nl;   // how much
-        filePtr()   << "node_data" << nl;  //name of data
-
-        //real tags
-        filePtr()   << "1" << nl    // how much
-                    << "0" << nl;   // should be output time (just 0 for all files)
-            
-        //integer tags
-        filePtr()   << "4" << nl    // how much
-                    << "0" << nl    // time step index
-                    << "1" << nl            // how many field components
-                    << data.size() << nl  // number of entities (nodes or elements)
-                    << "0" << nl;
-
-        forAll(data, probeI)
-        {
-            filePtr() << probeI+1 << ' ';
-            writeComplexNumber(data[probeI],filePtr);
-            filePtr() << nl;
-                    
-        }
-
-        filePtr() << "$EndNodeData" << nl;
-    }
-
-}
-
-scalar linearInterpolation(const scalar x, const scalar x1, const scalar y1, const scalar x2, const scalar y2)
-{
-    scalar a = (y2 - y1)/(x2 - x1);
-    scalar b = y1 - a*x1;
-
-    scalar y = a*x+b;
-
-    //Info << "x = " << x << "y = " << y << " | x1 = " << x1 << " y1 = " << y1 << " | x2 = " << x2 << " y2 = " << y2 << nl ;
-
-    return y;
-}
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -289,45 +122,75 @@ int main(int argc, char *argv[])
     #include "createFields.H"
 
     Info<< "Reading data file..." << endl;
-    #include "readDataFile.H"
+
+    fileName pFileName = "pressureData/" + inputFileName;
+
+    FileInterface reader(pFileName);
+
+    autoPtr<List<List<scalar> > > ptData = reader.read();
 
     //------------------------
+    //prepare place for sampling
 
+    //number of sampled (init) times
+    label sampledTimePoints = ptData().size();
+
+    List<scalar> tSampled(sampledTimePoints,0.0);
+    //tSampled.resize(sampledTimePoints);
+
+    forAll(tSampled,tI)
+    {
+        tSampled[tI] = ptData()[tI][0];
+    }
+
+    scalar lastTime = tSampled[sampledTimePoints-1];
+
+    // pressure data
+    List<scalar> pSampled(sampledTimePoints,0.0); // just buffer for pressure data in one point
+    //pSampled.resize(sampledTimePoints);
+
+    //------------------------
     //calculate the interpolation time interval
-    Info<< "Calculate interpolation..." << endl;
+
+    Info << "Prepare to fft..." << endl;
 
 
-    label nFftTimePoints = 2*label(maxFreq*lastTime);
-    scalar deltaIntT = lastTime / (scalar(nFftTimePoints)); //2*... because spectrum is symmetric
+    label nFftTimePoints = label(2*maxFreq*lastTime); //2*... because spectrum is symmetric
+    scalar deltaIntT = lastTime / (scalar(nFftTimePoints) );
+    label freqPoints = ceil(0.5*scalar(nFftTimePoints)) + 1;
 
-    List<scalar> pInt; // just buffer for pressure data prepared to fft (in one point)
-    pInt.resize(nFftTimePoints);
+    //pInt.resize(nFftTimePoints);
 
-    // list of frequencies
 
-    //scalar freqPoints = ceil( scalar(timePoints)*0.5 );
-    List<scalar> freq(nFftTimePoints);
+    //------------------------
+    //fft for all points on surface point-by-point
+
+    List<scalar> freq(freqPoints,0.0);
 
     forAll(freq,i)
     {
         freq[i] = scalar(i)/lastTime;
     }
 
-
-    //fft for all points on surface point-by-point
+    List<List<complex > > allComplexPressures(freqPoints); // buffer for all complex pressures
+    //allComplexPressures.resize(freqPoints);   
 
     autoPtr<List<complex > > fftOnePoint;
 
-    List<List<complex > > allComplexPressures; // buffer for all complex pressures
-    allComplexPressures.resize(nFftTimePoints);    // may be use files sequence?
-
     label nSurfPoints = ptData()[0].size();
 
-    Info << "Calculate FFT..." << endl;
+    Info << "Calculate interpolation and FFT..." << endl;
 
     for (label i = 1; i < nSurfPoints; ++i) //loop starts from 1 because time value is placed on 0 position
     {                    
-        #include "interpolate.H"
+        forAll(pSampled,pI)
+        {
+            pSampled[pI] = ptData()[pI][i];
+        }
+
+        Interpolator interpolator;
+
+        List<scalar> pInt = interpolator.interpolate(tSampled,pSampled,nFftTimePoints,deltaIntT);
 
         // calculate fft
         fftOnePoint = fft(pInt, lastTime);
@@ -338,22 +201,14 @@ int main(int argc, char *argv[])
             allComplexPressures[freqI].resize(i);
             allComplexPressures[freqI][i-1] = fftOnePoint()[freqI];
         }
-
-        //Info << fftOnePoint() << endl;
     }
-
-
-    //Info << "frequencies: " << freq << nl;
-
-    //Info << "last fft = " << allComplexPressures << nl;
 
 
     //------------------------
 
     Info<< "Write gmsh files..." << endl;
 
-    fileName outputDirectory = rootDirectory;
-    
+    fileName outputDirectory = inputFileName.lessExt();    
 
     fileName controlFile = "complexPressureData/" + outputDirectory + "Spectrum.dat";
 
@@ -382,30 +237,32 @@ int main(int argc, char *argv[])
         mkDir(freqDirectory);
 
         //write appropriate frequency
-        fileName freqFile  = freqDirectory + "/frequency";
+        //fileName freqFile  = freqDirectory + "/frequency";
 
-        autoPtr<OFstream> freqFilePtr;
+        //autoPtr<OFstream> freqFilePtr;
 
-        if (freqFilePtr.empty())
-        {
+        //if (freqFilePtr.empty())
+        //{
         // Open new file at start up
-            freqFilePtr.reset
-            (
-                new OFstream
-                (
-                    freqFile
-                )
-            );
-        }
+        //    freqFilePtr.reset
+        //    (
+        //        new OFstream
+        //        (
+        //            freqFile
+        //        )
+        //    );
+        //}
 
-        freqFilePtr() << freq[freqI];
+        //freqFilePtr() << freq[freqI];
 
         //write data to msh file
         if (outputFormat == "gmsh")
         {
-            fileName dataFile = freqDirectory + "/nodeData.gmsh";
+            fileName dataFile = freqDirectory + "/nodeData.msh";
+
+            FileInterface outputFile(dataFile);
             
-            writeToGmsh(dataFile,allComplexPressures[freqI]);
+            outputFile.write(freq[freqI],allComplexPressures[freqI]);
         }
         
         Info << "---------------\n";
@@ -415,19 +272,19 @@ int main(int argc, char *argv[])
         
         forAll(allComplexPressures[freqI],k)
         {
-    	    complex currentCA = allComplexPressures[freqI][k];
-    	    scalar currentAbs = Foam::sqrt( pow(currentCA.Re(),2) + pow(currentCA.Im(),2) );
-    	    
-    	    if (maxAbs < currentAbs)
-    	    {
-    	        maxAbs = currentAbs;
-    	    }
-    	    
+            complex currentCA = allComplexPressures[freqI][k];
+            scalar currentAbs = Foam::sqrt( pow(currentCA.Re(),2) + pow(currentCA.Im(),2) );
+            
+            if (maxAbs < currentAbs)
+            {
+                maxAbs = currentAbs;
+            }
+            
         }
         
         Info << "Max abs: " << maxAbs << nl;
 
-Info << "write..." << nl;
+        Info << "write..." << nl;
 
         controlFilePtr() << freq[freqI] << ' ' << maxAbs << nl;
     }

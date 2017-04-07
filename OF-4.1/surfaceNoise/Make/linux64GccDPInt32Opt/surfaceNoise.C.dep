@@ -1,7 +1,11 @@
 $(OBJECTS_DIR)/surfaceNoise.C.dep: \
 surfaceNoise.C \
-FoamFourierAnalysis/FoamFftwDriver.H \
-/unicluster/home/viktoria.korchagova/OpenFOAM/viktoria.korchagova-4.1/platforms/linux64GccDPInt32Opt/lib/fftw-3.3.3/include/fftw3.h \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/argList.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stringList.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/string.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/char.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Hasher.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stringI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/List.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/UList.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/bool.H \
@@ -11,10 +15,6 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/label.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/int.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/int32.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/word.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/string.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/char.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Hasher.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stringI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/wordI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/int64.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/labelSpecific.H \
@@ -107,9 +107,6 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/IndirectListI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/BiIndirectList.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/BiIndirectListI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/ListIO.C \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Pair.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/argList.H \
-$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/stringList.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SubList.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/SubListI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/parRun.H \
@@ -209,6 +206,7 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FieldMapper.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/FieldM.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/mapDistributeBase.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/labelPair.H \
+$(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Pair.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/boolList.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/Map.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/mapDistributeBaseTemplates.C \
@@ -272,15 +270,17 @@ $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/HashSet.C \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/fileMonitor.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigWriteNow.H \
 $(WM_PROJECT_DIR)/src/OSspecific/POSIX/lnInclude/sigStopAtWriteNow.H \
+FoamFourierAnalysis/FoamFftwDriver.H \
+/unicluster/home/viktoria.korchagova/OpenFOAM/viktoria.korchagova-4.1/platforms/linux64GccDPInt32Opt/lib/fftw-3.3.3/include/fftw3.h \
+FileInterface/FileInterface.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/OFstream.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/complex.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/complexI.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/IFstream.H \
+Interpolator/Interpolator.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/addDictOption.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/setRootCase.H \
 $(WM_PROJECT_DIR)/src/OpenFOAM/lnInclude/createTime.H \
 createFields.H \
-readDataFile.H \
-interpolate.H \
 
 

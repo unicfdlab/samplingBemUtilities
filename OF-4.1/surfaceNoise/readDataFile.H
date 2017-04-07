@@ -1,5 +1,5 @@
     fileName rootDirectory = "pressureData/";
-    fileName pFileName = inputFileName + ".txt";
+    fileName pFileName = inputFileName;
 
     autoPtr<List<List<scalar> > > ptData = read(pFileName);
 

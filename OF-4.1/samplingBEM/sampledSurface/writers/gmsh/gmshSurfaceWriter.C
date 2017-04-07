@@ -257,7 +257,7 @@ void Foam::gmshSurfaceWriter::writeTemplate
         mkDir(outputDir);
     }
 
-    OFstream os(outputDir/fieldName + '_' + surfaceName + ".gmsh");
+    OFstream os(outputDir/fieldName + '_' + surfaceName + ".msh");
 
     if (verbose)
     {
@@ -337,7 +337,7 @@ void Foam::gmshSurfaceWriter::write
         mkDir(outputDir);
     }
 
-    OFstream os(outputDir/surfaceName + ".gmsh");
+    OFstream os(outputDir/surfaceName + ".msh");
 
     if (verbose)
     {

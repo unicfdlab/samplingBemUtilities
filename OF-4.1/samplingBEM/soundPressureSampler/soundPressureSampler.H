@@ -44,8 +44,6 @@ SourceFiles
 #ifndef soundPressureSampler_H
 #define soundPressureSampler_H
 
-#include "functionObject.H"
-
 #include "coordinateSystem.H"
 #include "coordinateSystems.H"
 #include "primitiveFieldsFwd.H"
@@ -62,6 +60,7 @@ SourceFiles
 #include "volFields.H"
 
 //control surfaces stuff (!)
+#include "functionObject.H"
 #include "sampledSurface.H"
 #include "surfaceWriter.H"
 #include "surfaceFieldsFwd.H"
@@ -74,9 +73,9 @@ namespace Foam
 {
 
 // Forward declaration of classes
-class objectRegistry;
+class Time;
+class fvMesh;
 class dictionary;
-class mapPolyMesh;
 
 /*---------------------------------------------------------------------------*\
                     Class soundPressureSampler Declaration
@@ -85,63 +84,46 @@ class mapPolyMesh;
 class soundPressureSampler
 :
     public functionObject
-    //public PtrList<sampledSurface>
-        
 {
+
 
 private:
 
 //- Class used for surface merging information
-class mergeInfo
-{
-
-public:
-
-    pointField points;
-    faceList faces;
-    labelList pointsMap;
-
-    //- Clear all storage
-    void clear()
+    class mergeInfo
     {
-        points.clear();
-        faces.clear();
-        pointsMap.clear();
-    }
-};
+
+    public:
+
+	pointField points;
+	faceList faces;
+	labelList pointsMap;
+
+	//- Clear all storage
+	void clear()
+	{
+	    points.clear();
+	    faces.clear();
+    	    pointsMap.clear();
+	}
+    };
+    
+    //- Output verbosity
+    static bool verbose_;
+    
     //- Tolerance for merging points (fraction of mesh bounding box)
     static scalar mergeTol_;
     
-    class dScalar
-    {
-    public:
-        scalar value;
-        autoPtr<scalar> old;
-        autoPtr<scalar> oldOld;
-        dScalar(scalar init)
-        {
-            value = init;
-        };
-        ~dScalar()
-        {};
-        /*
-        dScalar operator+(const scalar &add)
-        {
-        value+=add;
-        };
-        dScalar operator-(const scalar &sub)
-        {
-        value+=sub;
-        };
-        dScalar operator=(const scalar &init)
-        {
-        value+=init;
-        };
-        */
-    };
-
 protected:
+
     // Private data
+    
+	//- Const reference to fvMesh
+	const fvMesh& mesh_;
+	        
+	//- Load fields from files (not from objectRegistry)
+	const bool loadFromFiles_;
+	                        
         
         //- Name of this set of soundPressureSampler,
         // Also used as the name of the probes directory.
@@ -150,11 +132,9 @@ protected:
         //- Standard OpenFOAM object registry
         //const objectRegistry& obr_;
         
-        //- Const reference to fvMesh
-	const fvMesh& mesh_;
-
         //- Switch to send output to Info as well as to file
-        Switch log_;        
+        Switch log_;
+
 
         //- Interpolation scheme to use for sampling
         word interpolationScheme_;
@@ -172,7 +152,7 @@ protected:
         word pName_;
 
         //- Pressure value at infinity 
-        scalar pRef_;
+        //scalar pRef_;
                
         //- Smart pointer to file output stream
         List< autoPtr <OFstream> > soundPressureSamplerFilePtr_;
@@ -227,24 +207,24 @@ public:
 
     // Constructors
     
-	//- Construct from Time and dictionary
-	soundPressureSampler
-	(
-	    const word& name,
-	    const Time& time,
-	    const dictionary& dict
-	);
-    
-    
-        //- Construct for given objectRegistry and dictionary.
-        // Allow the possibility to load fields from files
+        //- Construct from Time and dictionary
         soundPressureSampler
         (
-            const word& name,
-            const objectRegistry&,
-            const dictionary&,
-            const bool loadFromFiles = false
+	    const word& name,
+            const Time& time,
+            const dictionary& dict
         );
+                                                                    
+	//- Construct for given objectRegistry and dictionary
+	//  allow the possibility to load fields from files
+        soundPressureSampler
+	(
+    	    const word& name,
+    	    const objectRegistry&,
+    	    const dictionary&,
+    	    const bool loadFromFiles = false
+	);	
+                                                                                                                                                            
 
     //- Destructor
     virtual ~soundPressureSampler();
@@ -264,7 +244,7 @@ public:
         virtual bool execute();
 
         //- Execute at the final time-loop, currently does nothing
-        virtual bool end();
+        //virtual bool end();
 
         //- Called when time was set at the end of the Time::operator++
         virtual void timeSet();

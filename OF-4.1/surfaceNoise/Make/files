@@ -1,4 +1,6 @@
 FoamFourierAnalysis/FoamFftwDriver.C
+FileInterface/FileInterface.C
+Interpolator/Interpolator.C
 
 surfaceNoise.C
 

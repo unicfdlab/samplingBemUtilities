@@ -77,24 +77,17 @@ void Foam::soundPressureSampler::writeSurface
     scalar cTime
 ) const
 {
-    //Pout << "in collection" << nl;
 
     if (Pstream::parRun())
     {
-        //Pout << "before collection" << nl;
-
-        // Collect values from all processors
-        //Pout << "1" << nl;
         List<Field<Type> > gatheredValues(Pstream::nProcs());
-        //Pout << "2" << nl;
+        
         gatheredValues[Pstream::myProcNo()] = values;
-        //Pout << "3" << nl;
+        
         Pstream::gatherList(gatheredValues);
-        //Pout << "ok" << nl;
 
         if (Pstream::master())
         {
-            //Pout << "just for master" << nl;
             // Combine values into single field
             Field<Type> allValues
             (
@@ -112,12 +105,7 @@ void Foam::soundPressureSampler::writeSurface
                 allValues.setSize(mergeList_[surfI].points.size());
             }
 
-            // Write to time directory under outputPath_
-            // skip surface without faces (eg, a failed cut-plane)
-
-            //Info << "mergeList_ size = " << mergeList_[surfI].faces.size() << nl;
-            //Info << "allValues size = " << allValues.size() << nl;
-            
+            // Write to defined directory             
             if (mergeList_[surfI].faces.size())
             {
                 if (os.valid())
@@ -125,8 +113,7 @@ void Foam::soundPressureSampler::writeSurface
                     os() << cTime << ' ';
                     
                     forAll(allValues,i)
-                    {
-                        //const label& num = mergeList_[surfI].pointsMap[i];                  
+                    {                  
                         os() << allValues[i] << " ";
                     }
                     

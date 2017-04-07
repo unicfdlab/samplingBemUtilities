@@ -73,24 +73,24 @@ Foam::scalar Foam::soundPressureSampler::mergeTol_ = 1e-10;
 
 void Foam::soundPressureSampler::writeGeometry() const
 {
-    // Write to time directory under outputPath_
-    // Skip surface without faces (eg, a failed cut-plane)
-
-
     const fileName outputDir = "surfaceGeometryData";
 
     Info << "write geometry \n";
+
+    Info << controlSurfaces_.size() << nl;
+
 
     forAll(controlSurfaces_, surfI)
     {
         Info << "in surfaces list\n";        
         
         const sampledSurface& s = controlSurfaces_.operator[](surfI);
-
-        Info << "surfI size = " << mergeList_[surfI].faces.size() << nl;
+        
 
         if (Pstream::parRun())
         {
+            Info << "surfI size = " << mergeList_[surfI].points.size() << nl;
+
             if (Pstream::master() && mergeList_[surfI].faces.size())
             {
                 formatter_->write
@@ -102,8 +102,10 @@ void Foam::soundPressureSampler::writeGeometry() const
                 );
             }
         }
-        else if (s.faces().size())
+        else if (s.points().size())
         {
+            Info << s.points().size() << nl;
+
             formatter_->write
             (
                 outputDir,
@@ -111,6 +113,10 @@ void Foam::soundPressureSampler::writeGeometry() const
                 s.points(),
                 s.faces()
             );
+        }
+        else
+        {
+            Info << "empty surface info" << nl;
         }
     }
 }
@@ -127,7 +133,6 @@ Foam::soundPressureSampler::soundPressureSampler
 )
 :
     functionObject(name),
-    name_(name),
     mesh_
     (
 	refCast<const fvMesh>
@@ -138,12 +143,14 @@ Foam::soundPressureSampler::soundPressureSampler
             )
         )                                                                
     ),
+    loadFromFiles_(false),
+    name_(name),
     log_(false),
     interpolationScheme_(word::null),
     controlSurfaces_(0),
     outputFormat_(word::null),
     pName_(word::null),
-    pRef_(0),
+    //pRef_(0),
     soundPressureSamplerFilePtr_(0),
     mergeList_(),
     probeI_(0)
@@ -165,21 +172,19 @@ Foam::soundPressureSampler::soundPressureSampler
 )
 :
     functionObject(name),
-    name_(name),
-    //obr_(obr),
     mesh_(refCast<const fvMesh>(obr)),
+    loadFromFiles_(false),
+    name_(name),
     log_(false),
     interpolationScheme_(word::null),
     controlSurfaces_(0),
     outputFormat_(word::null),
     pName_(word::null),
-    pRef_(0),
+    //pRef_(0),
     soundPressureSamplerFilePtr_(0),
     mergeList_(),
     probeI_(0)
 {
-    Info << "in constructor" << nl;
-    
     read(dict);
 }
 
@@ -260,6 +265,14 @@ bool Foam::soundPressureSampler::read(const dictionary& dict)
         Info << "go to makeFile" << nl;
 
         makeFile();
+
+        Info << "make file OK" << nl; 
+
+        update();
+
+        writeGeometry();
+
+        Info << "writeGeometry OK" << nl;
     }
 
     if (Pstream::master() && debug)
@@ -274,9 +287,7 @@ bool Foam::soundPressureSampler::read(const dictionary& dict)
         Pout<< ")" << endl;
     }
     
-    dict.lookup("pName") >> pName_;
-    dict.lookup("pRef") >> pRef_;
-    
+    dict.lookup("pName") >> pName_;    
     
     return true;
 }
@@ -320,28 +331,34 @@ void Foam::soundPressureSampler::makeFile()
         {
             sampledSurface& s = controlSurfaces_.operator[](surfI);
 
+            fileName pFileName = soundPressureSamplerDir + "/" + (s.name() + "_" + name_ + ".txt");
+
+            if (isFile(pFileName))
+            {
+                Info << "File " << pFileName << " is already exists" << nl;
+            }
+
+
+
+
+
             if (soundPressureSamplerFilePtr_[surfI].empty())
             {
-            // Open new file at start up
-                Info << soundPressureSamplerDir + "/" + (s.name() + "_" + name_ + ".txt") << nl;
+                // Open new file at start up
+                Info << pFileName << nl;
 
                 soundPressureSamplerFilePtr_[surfI].reset
                 (
                     new OFstream
                     (
-                        soundPressureSamplerDir + "/" + (s.name() + "_" + name_ + ".txt")
+                        pFileName
                     )
                 );
             }
-
-            // if (soundPressureSamplerFilePtr_[surfI].valid())
-            // {
-            //      Info << "write surface suze" << nl;
-            //      soundPressureSamplerFilePtr_[surfI]() << s.points().size() << nl;
-            //      soundPressureSamplerFilePtr_[surfI]() << endl;
-            // }
         }
     }
+    
+    //write();
 }
 
 bool Foam::soundPressureSampler::execute()
@@ -449,13 +466,13 @@ bool Foam::soundPressureSampler::update()
     return updated;
 }
 
-bool Foam::soundPressureSampler::end()
-{
-    Pout << "end function" << nl;
+//bool Foam::soundPressureSampler::end()
+//{
+//    Pout << "end function" << nl;
     // Do nothing - only valid on execute
     
-    return true;
-}
+//    return true;
+//}
 
 void Foam::soundPressureSampler::timeSet()
 {
@@ -468,36 +485,13 @@ bool Foam::soundPressureSampler::write()
 
     update();
 
-    if (probeI_ == 1)
-    {
-        writeGeometry();
-    }
-
 
     scalar cTime = mesh_.time().value();
-    
-    // //working with sampled surfaces
-    // Info << " Surfaces updated"<<nl;
-
-
-
 
     forAll(controlSurfaces_, surfI)
     {
-
-        //sampledSurface& s = controlSurfaces_.operator[](surfI);
-
-        //scalar surfaceSize = s.points().size();
-
-        // Pout << " before sampling " << nl;
-
         const volScalarField& p = mesh_.lookupObject<volScalarField>(pName_);
 
-
-        // Pout << "size of pfield after sampling " << p.size() << endl;
-
-
-        //Pout << "before collect and write" << nl;
         sampleAndWrite(p,surfI,soundPressureSamplerFilePtr_[surfI],cTime);
     }  
     
